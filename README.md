@@ -15,12 +15,13 @@ To learn more about Resourcely, visit [https://www.resourcely.io/](https://www.r
 
 In order to use this template, you must have the following prerequisties configured:
 
-- [Maintainer Access]() to the Project you will add the Resourcely job to
-- [Required Environment Variables]() added to your Project
+- [Maintainer Role](https://docs.gitlab.com/ee/user/permissions.html#roles) in the project you want to run the Resourcely infrastructure validation job on
+- [Required Environment Variables](https://docs.resourcely.com/getting-started/onboarding/ci-cd-setup/gitlab-pipelines#adding-required-variables-to-the-repository) added to your project
 
 ## Usage
 
-To apply this template to your 
+To apply this template to your GitLab CI/CD pipline, simply add the following to
+your [.gitlab-ci.yml](https://docs.gitlab.com/ee/ci/).
 
 ```
 # Resourcely CI runs on the test stage of a GitLab pipeline
@@ -28,7 +29,7 @@ stage:
   - test
 
 include:
-  - remote: 'https://gitlab.com/awesome-project/raw/main/.before-script-template.yml'
+  - remote: 'https://raw.githubusercontent.com/Resourcely-Inc/resourcely-gitLab-template/main/.resourcely.gitlab-ci.yml'
 ```
 
 ## Configurations
@@ -36,7 +37,8 @@ include:
 You can configure how the Resourcely job by adding the following variables to
 your project's .gitlab-ci.yml:
 
-```
-variables:
-  OK: OK
-```
+| Name | Description | Default Value |
+| ---- | ----------- | ------------- |
+| TF_DIRECTORY | The location of the Terraform files to be validated | $CI_PROJECT_DIR |
+| RESOURCELY_API_HOST | The location of the Resourcely API you are using | "https://api.resourcely.io" |
+| RESOURCELY_DEBUG | Enables Resourcely bebug logs | "false" |
