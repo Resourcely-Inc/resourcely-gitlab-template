@@ -17,12 +17,6 @@ variables:
   RESOURCELY_IMAGE: "latest"
   RESOURCELY_DEBUG: "false"
 
-workflow:
-  rules:
-    - if: $CI_MERGE_REQUEST_ID
-      when: always
-    - when: never
-
 resourcely_guardrails:
   stage: test
   image: 
