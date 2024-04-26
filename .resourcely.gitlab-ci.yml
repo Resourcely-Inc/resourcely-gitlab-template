@@ -32,7 +32,4 @@ resourcely_guardrails:
     - /resourcely-cli evaluate --change_request_url $CHANGE_REQUEST_URL --change_request_sha $CI_COMMIT_SHA --plan $TF_PLAN_DIRECTORY/plan.json
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-  artifacts:
-    paths:
-      - $TF_PLAN_DIRECTORY/*
   allow_failure: true
