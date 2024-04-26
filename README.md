@@ -1,44 +1,79 @@
-# Resourcely GitLab Template
+# Resourcely GitLab Guardrail Template
 
-This template allows you to easily add Resourcely infrastructure guardrail validation job
-to your GitLab projects. The Resourcely infrastructure guardrail validation job will scan
-Terraform plans within your GitLab merge-requests and validate them against the guardrails
-you have configured in Resourcely.
+This repository houses the [GitLab CICD Configuration](https://docs.gitlab.com/ee/ci/yaml/includes.html) for running
+the Resourcely guardrail validator.
 
-To learn more about Resourcely, visit [https://www.resourcely.io/](https://www.resourcely.io/). For guidance on the Resourcely GitLab integration see:
-
-- [Resourcely GitLab SCM Integration](https://docs.resourcely.com/getting-started/onboarding/source-code-management-integration/gitlab)
-- [Resourcely GitLab CI/CD Setup](https://docs.resourcely.com/getting-started/onboarding/ci-cd-setup/gitlab-pipelines)
-- [Resourcely Guardrail Validation in Action](https://docs.resourcely.com/getting-started/using-resourcely/guardrails-in-action/gitlab-pipelines)
-
-## Prerequisites
-
-In order to use this template, you must have the following prerequisties configured:
-
-- [Maintainer Role](https://docs.gitlab.com/ee/user/permissions.html#roles) in the project you want to run the Resourcely infrastructure validation job on
-- [Required Environment Variables](https://docs.resourcely.com/getting-started/onboarding/ci-cd-setup/gitlab-pipelines#adding-required-variables-to-the-repository) added to your project
-
-## Usage
-
-To apply this template to your GitLab CI/CD pipline, simply add the following to
-your [.gitlab-ci.yml](https://docs.gitlab.com/ee/ci/).
-
-```
-# Resourcely CI runs on the test stage of a GitLab pipeline
+It can be easily added to your GitLab pipeline by including the template in your [.gitlab-ci.yml](https://docs.gitlab.com/ee/ci/#the-gitlab-ciyml-file):
+```yaml
 stage:
   - test
 
 include:
-  - remote: 'https://raw.githubusercontent.com/Resourcely-Inc/resourcely-gitLab-template/main/.resourcely.gitlab-ci.yml'
+  - remote: 'https://raw.githubusercontent.com/Resourcely-Inc/resourcely-gitlab-template/main/.resourcely.gitlab-ci.yml'
 ```
 
-## Configurations
+See the following for examples on how to implement this template:
 
-You can configure how the Resourcely job by adding the following variables to
-your project's .gitlab-ci.yml:
+- [GitLab CI/CD](https://github.com/Resourcely-Inc/scaffolding-gitlab-pipeline)
+- [GitLab CI/CD + Terraform Cloud](https://github.com/Resourcely-Inc/scaffolding-gitlab-pipeline-terraform-cloud)
 
-| Name | Description | Default Value |
-| ---- | ----------- | ------------- |
-| TF_DIRECTORY | The location of the Terraform files to be validated | $CI_PROJECT_DIR |
-| RESOURCELY_API_HOST | The location of the Resourcely API you are using | "https://api.resourcely.io" |
-| RESOURCELY_DEBUG | Enables Resourcely bebug logs | "false" |
+## Prereqisites
+
+1. [A Resourcely Account](https://docs.resourcely.io/resourcely-terms/user-management/resourcely-account)
+2. [Resourcely GitLab SCM Configured](https://docs.resourcely.io/integrations/source-code-management/gitlab)
+3. [GitLab Premium or Ultimate subscription](https://about.gitlab.com/pricing/)
+4. [Maintainer Role or Higher](https://docs.gitlab.com/ee/user/permissions.html#roles) in the GitLab project
+
+## Usage
+
+In order to add the Resourcely guardrail validation job to your GitLab pipeline, you must perform the following:
+
+1. [Generate a Resourcely API Token](https://docs.resourcely.io/onboarding/api-access-token-generation) and save it in a safe place
+2. Add your Resourcely API Token to your [GitLab project CI/CD variables](https://docs.gitlab.com/ee/ci/variables/)
+    a. Go to the GitLab project that Resourcely will validate
+    b. In the side tab, navigate to **Settings > CI/CD**
+    c. Expand the **Variables** tab
+    d. Click the **Add variable** button
+    e. Add `RESOURCELY_API_TOKEN` as the Key and the **token** as the value
+    f. Unselect **Protect variable** so that the token can be used in feature branches
+    g. Press the **Add variable** button
+3. Add required [Terraform Provider Credentials](https://developer.hashicorp.com/terraform/language/providers) or [Terraform Cloud Team Token]((https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens#team-api-tokens)) to your GitLab project CI/CD variables as done in step 2
+4. Create or edit your `.gitlab-ci.yml` file in the root of your GitLab project
+5. Import the Resourcely template
+  ```yaml
+  stage:
+    - test
+
+  include:
+    - remote: 'https://raw.githubusercontent.com/Resourcely-Inc/resourcely-gitLab-template/main/.resourcely.gitlab-ci.yml'
+  ```
+6. Create a Resource with Resourcely
+
+Once a new Resource has been created via Merge-Request, the Resourcely job will automatically kick-off. It runs in
+the **test** stage by default.
+
+## Template Configuration
+
+The Resourcely template can be customized by overwriting the following variables in your `.gitlab-ci.yml`:
+
+| Variable | Description | Default |
+| -------- | ----------- | ------- |
+| TF_PLAN_DIRECTORY | The directory of the Terraform plans to validate | `$CI_PROJECT_DIR` |
+| TF_PLAN_PATTERN | The pattern to scan for under the TF_PLAN_DIRECTORY | "plan*" |
+| CHANGE_REQUEST_URL | The URL of the merge-request to validate | `$CI_MERGE_REQUEST_PROJECT_URL/-/merge_requests/$CI_MERGE_REQUEST_IID` |
+| RESOURCELY_API_HOST | The Resourcely API host | "https://api.resourcely.io" |
+| RESOURCELY_IMAGE | The Resourcely container image version | "latest" |
+| RESOURCELY_DEBUG | Enable debug mode | "false" |
+
+Additionally you can run the Resourcely guardrail job in another stage by overwriting the job definition in your
+`.gitlab-ci.yml`. The following example sets the Resourcely guardrail job to run in a stage named **security**, and sets the `TF_PLAN_DIRECTORY` to **/plans** :
+
+```yaml
+stages:
+  - security
+
+resourcely_guardrails:
+  stage: security
+  variables:
+    TF_PLAN_DIRECTORY: /plans
+```

@@ -1,14 +1,20 @@
-# Resourcely Guardrail Validation 
-# Used to validate your Terraform plans against Resourcely Guardrails
+# This template runs the Resourcely guardrail validation job on your Terraform plan(s) created
+# within Resourcely. It can be applied by adding the template to your .gitlab-ci.yml as follows
+# include:
+#   - remote: 'https://raw.githubusercontent.com/Resourcely-Inc/resourcely-gitlab-template/main/.resourcely.gitlab-ci.yml'
+# See https://docs.gitlab.com/ee/ci/yaml/includes.html for usage examples
 
-# The variables defined in this template are common defaults. If you need to configure them,
-# simply add them to your project's .gitlab-ci.yml or your project's UI CI/CD variables.
-# See https://docs.resourcely.com/getting-started/onboarding/ci-cd-setup/gitlab-pipelines for more information
+# Requires the following private variables to be configured:
+# RESOURCELY_API_TOKEN: Your Resourcely API Token
+
+# These variables can be overwritten in the .gitlab-ci.yml
+# which imports this template
 variables:
-  TF_DIRECTORY: $CI_PROJECT_DIR
-  RESOURCELY_API_HOST: "https://api.resourcely.io"
-  VCS: "gitlab"
+  TF_PLAN_DIRECTORY: $CI_PROJECT_DIR
+  TF_PLAN_PATTERN: "plan*"
   CHANGE_REQUEST_URL: $CI_MERGE_REQUEST_PROJECT_URL/-/merge_requests/$CI_MERGE_REQUEST_IID
+  RESOURCELY_API_HOST: "https://api.resourcely.io"
+  RESOURCELY_IMAGE: "latest"
   RESOURCELY_DEBUG: "false"
 
 workflow:
@@ -20,13 +26,10 @@ workflow:
 resourcely_guardrails:
   stage: test
   image: 
-    name: ghcr.io/resourcely-inc/resourcely-cli:latest
+    name: ghcr.io/resourcely-inc/resourcely-cli:$RESOURCELY_IMAGE
     entrypoint: [""]
   script:
-    - /resourcely-cli evaluate --vcs $VCS --change_request_url $CHANGE_REQUEST_URL --change_request_sha $CI_COMMIT_SHA $TF_DIRECTORY/plan.json
+    - /resourcely-cli evaluate --change_request_url $CHANGE_REQUEST_URL --change_request_sha $CI_COMMIT_SHA --plan $TF_PLAN_DIRECTORY/plan.json
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-  artifacts:
-    paths:
-      - $TF_DIRECTORY/plan.json
   allow_failure: true
