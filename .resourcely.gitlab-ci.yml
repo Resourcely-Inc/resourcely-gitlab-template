@@ -16,6 +16,7 @@ variables:
   RESOURCELY_API_HOST: "https://api.resourcely.io"
   RESOURCELY_IMAGE: "latest"
   RESOURCELY_DEBUG: "false"
+  RESOURCELY_MANIFEST_PATH: ""
 
 workflow:
   rules:
@@ -26,11 +27,15 @@ resourcely_guardrails:
   image: 
     name: ghcr.io/resourcely-inc/resourcely-cli:$RESOURCELY_IMAGE
     entrypoint: [""]
-  before_script:
-    - sh locate-plans.sh
-    - export PLANS=$(ls -1 $TF_PLAN_DIRECTORY/$TF_PLAN_PATTERN | tr '\r\n' ',' | sed -e 's/,$/\n/')
   script:
-    - /resourcely-cli evaluate --change_request_url $CHANGE_REQUEST_URL --change_request_sha $CI_COMMIT_SHA --plan $PLANS
+    - >
+      if [[ -z "${RESOURCELY_MANIFEST_PATH}" ]]; then
+        sh locate-plans.sh
+        export PLANS=$(ls -1 $TF_PLAN_DIRECTORY/$TF_PLAN_PATTERN | tr '\r\n' ',' | sed -e 's/,$/\n/')
+        /resourcely-cli evaluate --change_request_url $CHANGE_REQUEST_URL --change_request_sha $CI_COMMIT_SHA --plan $PLANS
+      else
+        /resourcely-cli evaluate --change_request_url $CHANGE_REQUEST_URL --change_request_sha $CI_COMMIT_SHA --plan_manifest $RESOURCELY_MANIFEST_PATH
+      fi
   allow_failure: true
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
